@@ -145,6 +145,7 @@ resource "google_compute_address" "ingress_ip" {
   name         = "lb-external-ip"
   address_type = "EXTERNAL"
   ip_version   = "IPV4"
+  region       = "us-central1"
 }
 
 ########################################

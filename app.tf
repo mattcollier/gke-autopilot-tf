@@ -43,6 +43,10 @@ resource "time_sleep" "wait_service_cleanup" {
 #   region       = "us-central1"
 # }
 
+resource "google_compute_global_address" "ingress_ip" {
+  name = "lb-external-ip"
+}
+
 ########################################
 # RED deployment + service
 ########################################
@@ -125,7 +129,7 @@ resource "kubernetes_ingress_v1" "color_paths" {
     name = "color-paths"
     annotations = {
       "kubernetes.io/ingress.class"                 = "gce"
-      # "kubernetes.io/ingress.global-static-ip-name" = google_compute_address.ingress_ip.name
+      "kubernetes.io/ingress.global-static-ip-name" = google_compute_global_address.ingress_ip.name
     }
   }
 

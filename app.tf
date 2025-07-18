@@ -36,13 +36,6 @@ resource "time_sleep" "wait_service_cleanup" {
 }
 # [END gke_quickstart_autopilot_app]
 
-# resource "google_compute_address" "ingress_ip" {
-#   name         = "lb-external-ip"
-#   address_type = "EXTERNAL"
-#   ip_version   = "IPV4"
-#   region       = "us-central1"
-# }
-
 resource "google_compute_global_address" "ingress_ip" {
   name = "lb-external-ip"
 }

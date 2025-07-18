@@ -162,7 +162,7 @@ resource "kubernetes_deployment_v1" "red" {
           name  = "red"
           image = "hashicorp/http-echo"
           args  = ["-text=Hello from RED"]
-          port  { container_port = 5678 }
+          port { container_port = 5678 }
         }
       }
     }
@@ -174,8 +174,8 @@ resource "kubernetes_service_v1" "red" {
   spec {
     selector = { app = "red" }
     port {
-      name       = "http"
-      port       = 80
+      name        = "http"
+      port        = 80
       target_port = 5678
     }
     type = "ClusterIP"
@@ -199,7 +199,7 @@ resource "kubernetes_deployment_v1" "blue" {
           name  = "blue"
           image = "hashicorp/http-echo"
           args  = ["-text=Hello from BLUE"]
-          port  { container_port = 5678 }
+          port { container_port = 5678 }
         }
       }
     }
@@ -211,8 +211,8 @@ resource "kubernetes_service_v1" "blue" {
   spec {
     selector = { app = "blue" }
     port {
-      name       = "http"
-      port       = 80
+      name        = "http"
+      port        = 80
       target_port = 5678
     }
     type = "ClusterIP"
@@ -228,7 +228,7 @@ resource "kubernetes_ingress_v1" "color_paths" {
   metadata {
     name = "color-paths"
     annotations = {
-      "kubernetes.io/ingress.class"               = "gce"
+      "kubernetes.io/ingress.class"                 = "gce"
       "kubernetes.io/ingress.global-static-ip-name" = google_compute_address.ingress_ip.name
     }
   }

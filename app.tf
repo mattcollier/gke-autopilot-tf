@@ -28,6 +28,7 @@ provider "kubernetes" {
   ]
 }
 
+/*
 resource "kubernetes_deployment_v1" "default" {
   metadata {
     name = "example-hello-app-deployment"
@@ -130,6 +131,7 @@ resource "kubernetes_service_v1" "default" {
 
   depends_on = [time_sleep.wait_service_cleanup]
 }
+*/
 
 # Provide time for Service cleanup
 resource "time_sleep" "wait_service_cleanup" {
@@ -138,3 +140,124 @@ resource "time_sleep" "wait_service_cleanup" {
   destroy_duration = "180s"
 }
 # [END gke_quickstart_autopilot_app]
+
+resource "google_compute_address" "ingress_ip" {
+  name         = "lb-external-ip"
+  address_type = "EXTERNAL"
+  ip_version   = "IPV4"
+}
+
+########################################
+# RED deployment + service
+########################################
+resource "kubernetes_deployment_v1" "red" {
+  metadata { name = "red-deployment" }
+  spec {
+    replicas = 2
+    selector { match_labels = { app = "red" } }
+    template {
+      metadata { labels = { app = "red" } }
+      spec {
+        container {
+          name  = "red"
+          image = "hashicorp/http-echo"
+          args  = ["-text=Hello from RED"]
+          port  { container_port = 5678 }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service_v1" "red" {
+  metadata { name = "red-service" }
+  spec {
+    selector = { app = "red" }
+    port {
+      name       = "http"
+      port       = 80
+      target_port = 5678
+    }
+    type = "ClusterIP"
+  }
+
+  depends_on = [time_sleep.wait_service_cleanup]
+}
+
+########################################
+# BLUE deployment + service
+########################################
+resource "kubernetes_deployment_v1" "blue" {
+  metadata { name = "blue-deployment" }
+  spec {
+    replicas = 2
+    selector { match_labels = { app = "blue" } }
+    template {
+      metadata { labels = { app = "blue" } }
+      spec {
+        container {
+          name  = "blue"
+          image = "hashicorp/http-echo"
+          args  = ["-text=Hello from BLUE"]
+          port  { container_port = 5678 }
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_service_v1" "blue" {
+  metadata { name = "blue-service" }
+  spec {
+    selector = { app = "blue" }
+    port {
+      name       = "http"
+      port       = 80
+      target_port = 5678
+    }
+    type = "ClusterIP"
+  }
+
+  depends_on = [time_sleep.wait_service_cleanup]
+}
+
+########################################
+# Ingress with path routing
+########################################
+resource "kubernetes_ingress_v1" "color_paths" {
+  metadata {
+    name = "color-paths"
+    annotations = {
+      "kubernetes.io/ingress.class"               = "gce"
+      "kubernetes.io/ingress.global-static-ip-name" = google_compute_address.ingress_ip.name
+    }
+  }
+
+  spec {
+    rule {
+      http {
+        path {
+          path      = "/red"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.red.metadata[0].name
+              port { number = 80 }
+            }
+          }
+        }
+
+        path {
+          path      = "/blue"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.blue.metadata[0].name
+              port { number = 80 }
+            }
+          }
+        }
+      }
+    }
+  }
+}
